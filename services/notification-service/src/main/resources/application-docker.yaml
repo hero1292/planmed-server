@@ -1,37 +1,48 @@
 spring:
   application:
     name: notification-service
-  datasource:
-    url: jdbc:postgresql://postgres:5432/notification_service
-    username: notification
-    password: notification
-    hikari:
-      maximum-pool-size: 3
-      minimum-idle: 0
-      idle-timeout: 30000
-      max-lifetime: 1800000
-      connection-timeout: 30000
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    properties:
-      hibernate.jdbc.time_zone: UTC
-  flyway:
-    enabled: true
+
   kafka:
-    bootstrap-servers: kafka:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:kafka:9092}
     consumer:
+      group-id: notification-service
       auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+  mail:
+    host: ${SPRING_MAIL_HOST}
+    port: ${SPRING_MAIL_PORT}
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
     properties:
-      spring.json.trusted.packages: "*"
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+notification:
+  retries:
+    max-attempts: ${NOTIFICATION_RETRY_MAX:5}
+    initial-backoff-ms: ${NOTIFICATION_RETRY_BACKOFF_MS:1000}
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       probes:
         enabled: true
+
 server:
   port: 8080
+
+logging:
+  level:
+    root: INFO
+    com.planmed.notification: INFO

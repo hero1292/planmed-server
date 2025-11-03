@@ -81,6 +81,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      PUBLIC_BASE_URL: http://localhost:8080
     ports:
       - "8101:8080"
 
@@ -94,6 +95,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      PII_SECRET: change-me-32-bytes-min
     ports:
       - "8102:8080"
 
@@ -163,12 +165,14 @@ services:
       dockerfile: services/notification-service/Dockerfile
     container_name: planmed-notification-service
     depends_on:
-      postgres:
-        condition: service_healthy
       kafka:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      SPRING_MAIL_HOST: smtp.gmail.com
+      SPRING_MAIL_PORT: 587
+      SPRING_MAIL_USERNAME: grigalex92@gmail.com
+      SPRING_MAIL_PASSWORD: Vita159Min"
     ports:
       - "8107:8080"
 
@@ -251,6 +255,19 @@ services:
       SPRING_PROFILES_ACTIVE: docker
     ports:
       - "8113:8080"
+
+  background-jobs:
+    build:
+      context: ../..
+      dockerfile: services/background-jobs/Dockerfile
+    container_name: planmed-background-jobs
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8114:8080"
 
 volumes:
   pgdata:

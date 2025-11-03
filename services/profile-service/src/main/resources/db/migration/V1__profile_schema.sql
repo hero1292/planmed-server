@@ -1,6 +1,6 @@
-CREATE SCHEMA IF NOT EXISTS app;
+CREATE SCHEMA IF NOT EXISTS profile;
 
-CREATE TABLE IF NOT EXISTS app.patient_profiles(
+CREATE TABLE IF NOT EXISTS profile.patient_profiles(
     user_id uuid PRIMARY KEY,
     full_name_enc bytea,
     birth_date date,
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS app.patient_profiles(
     updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS app.doctor_profiles(
+CREATE TABLE IF NOT EXISTS profile.doctor_profiles(
     user_id uuid PRIMARY KEY,
     full_name_enc bytea,
     specialty_enc bytea,
@@ -27,22 +27,22 @@ CREATE TABLE IF NOT EXISTS app.doctor_profiles(
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'assignment_status_enum') THEN
-        CREATE TYPE app.assignment_status_enum AS ENUM ('active','inactive');
+        CREATE TYPE profile.assignment_status_enum AS ENUM ('active','inactive');
     END IF;
 END $$;
 
-CREATE TABLE IF NOT EXISTS app.patient_doctor_assignments(
+CREATE TABLE IF NOT EXISTS profile.patient_doctor_assignments(
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     patient_id uuid NOT NULL,
     doctor_id uuid NOT NULL,
-    status app.assignment_status_enum NOT NULL DEFAULT 'active',
+    status profile.assignment_status_enum NOT NULL DEFAULT 'active',
     assigned_at timestamptz NOT NULL DEFAULT now(),
     ended_at timestamptz,
     comment text
 );
-CREATE UNIQUE INDEX IF NOT EXISTS uq_assignment_active ON app.patient_doctor_assignments(patient_id) WHERE status='active';
+CREATE UNIQUE INDEX IF NOT EXISTS uq_assignment_active ON profile.patient_doctor_assignments(patient_id) WHERE status='active';
 
-CREATE TABLE IF NOT EXISTS app.consents(
+CREATE TABLE IF NOT EXISTS profile.consents(
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     patient_id uuid NOT NULL,
     doctor_id uuid,

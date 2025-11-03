@@ -1,18 +1,67 @@
 spring:
   application:
-    name: gateway
+    name: api-gateway
+
   cloud:
     gateway:
-      default-filters: [ ]
-      routes: [ ]
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: false
+
+      routes:
+        - id: auth_register
+          uri: http://auth-service:8080
+          predicates:
+            - Path=/auth/register
+            - Method=POST
+
+        - id: auth_resend
+          uri: http://auth-service:8080
+          predicates:
+            - Path=/auth/resend-verification
+            - Method=POST
+
+        - id: auth_verify
+          uri: http://auth-service:8080
+          predicates:
+            - Path=/auth/verify
+            - Method=GET
+
+        - id: admin_invites
+          uri: http://auth-service:8080
+          predicates:
+            - Path=/admin/invites/**
+
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
+        - name: RequestRateLimiter
+          args:
+            key-resolver: "#{@ipKeyResolver}"
+            redis-rate-limiter.replenishRate: 5
+            redis-rate-limiter.burstCapacity: 5
+            redis-rate-limiter.requestedTokens: 1
+
+      redis-rate-limiter:
+        enabled: true
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       probes:
         enabled: true
+
 server:
   port: 8080
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty.http.client: DEBUG

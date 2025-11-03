@@ -1,69 +1,63 @@
-CREATE SCHEMA IF NOT EXISTS app;
+-- Auth service schema: users, sessions, email_verification_tokens, admin_invites + enums & indexes
+CREATE SCHEMA IF NOT EXISTS auth;
+
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 CREATE EXTENSION IF NOT EXISTS citext;
 
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_status_enum') THEN
-        CREATE TYPE app.user_status_enum AS ENUM ('active','blocked','pending');
-    END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_status_enum') THEN
+CREATE TYPE auth.user_status_enum AS ENUM ('PENDING', 'ACTIVE', 'BLOCKED');
+END IF;
 END $$;
 
-CREATE TABLE IF NOT EXISTS app.roles(
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    code text NOT NULL UNIQUE,
-    name text NOT NULL,
-    created_at timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS app.permissions(
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    code text NOT NULL UNIQUE,
-    description text,
-    created_at timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS app.role_permissions(
-    role_id uuid NOT NULL REFERENCES app.roles(id) ON DELETE CASCADE,
-    permission_id uuid NOT NULL REFERENCES app.permissions(id) ON DELETE CASCADE,
-    PRIMARY KEY(role_id, permission_id)
-);
-
-CREATE TABLE IF NOT EXISTS app.users(
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+CREATE TABLE IF NOT EXISTS auth.users (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
     login citext NOT NULL UNIQUE,
-    password_hash text NOT NULL,
-    status app.user_status_enum NOT NULL DEFAULT 'active',
-    role_id uuid NOT NULL REFERENCES app.roles(id),
-    mfa_enabled boolean NOT NULL DEFAULT false,
-    last_login_at timestamptz,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now()
-);
+    password_hash TEXT NOT NULL,
+    status auth.user_status_enum NOT NULL DEFAULT 'PENDING',
+    role_code TEXT NOT NULL CHECK (role_code IN ('PATIENT', 'DOCTOR', 'ADMIN')),
+    mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
 
-CREATE TABLE IF NOT EXISTS app.sessions(
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id uuid NOT NULL REFERENCES app.users(id) ON DELETE CASCADE,
-    issued_at timestamptz NOT NULL DEFAULT now(),
-    expires_at timestamptz NOT NULL,
-    revoked boolean NOT NULL DEFAULT false,
+CREATE TABLE IF NOT EXISTS auth.sessions (
+                                            id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
+    user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+    issued_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    expires_at TIMESTAMPTZ NOT NULL,
+    revoked BOOLEAN NOT NULL DEFAULT FALSE,
     ip inet,
-    user_agent text,
-    refresh_token_hash text UNIQUE
-);
+    user_agent TEXT,
+    refresh_token_hash TEXT UNIQUE
+    );
 
-CREATE TABLE IF NOT EXISTS app.password_reset_tokens(
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id uuid NOT NULL REFERENCES app.users(id) ON DELETE CASCADE,
-    token_hash text NOT NULL UNIQUE,
-    expires_at timestamptz NOT NULL,
-    used_at timestamptz
-);
+CREATE INDEX IF NOT EXISTS idx_sessions_user_expires ON auth.sessions (user_id, expires_at);
 
-CREATE TABLE IF NOT EXISTS app.email_verification_tokens(
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id uuid NOT NULL REFERENCES app.users(id) ON DELETE CASCADE,
-    token_hash text NOT NULL UNIQUE,
-    expires_at timestamptz NOT NULL,
-    used_at timestamptz
-);
+CREATE TABLE IF NOT EXISTS auth.email_verification_tokens (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
+    user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ
+    );
+
+CREATE INDEX IF NOT EXISTS idx_email_tokens_user_exp ON auth.email_verification_tokens (user_id, expires_at)
+    WHERE
+    used_at IS NULL;
+
+-- Admin invite flow
+CREATE TABLE IF NOT EXISTS auth.admin_invites (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
+    email TEXT NOT NULL UNIQUE,
+    token_hash TEXT NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+CREATE INDEX IF NOT EXISTS idx_admin_invites_exp ON auth.admin_invites (expires_at)
+    WHERE
+    used_at IS NULL;

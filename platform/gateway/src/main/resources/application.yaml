@@ -1,18 +1,54 @@
 spring:
   application:
-    name: gateway
+    name: api-gateway
   cloud:
     gateway:
-      default-filters: [ ]
-      routes: [ ]
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+      routes:
+        - id: auth_register
+          uri: http://auth-service:8081
+          predicates:
+            - Path=/auth/register
+            - Method=POST
+        - id: auth_resend
+          uri: http://auth-service:8081
+          predicates:
+            - Path=/auth/resend-verification
+            - Method=POST
+        - id: auth_verify
+          uri: http://auth-service:8081
+          predicates:
+            - Path=/auth/verify
+            - Method=GET
+        - id: admin_invites
+          uri: http://auth-service:8081
+          predicates:
+            - Path=/admin/invites/**
+      redis-rate-limiter:
+        enabled: false
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       probes:
         enabled: true
+
 server:
   port: 8080
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    root: INFO

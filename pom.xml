@@ -11,7 +11,7 @@
     <properties>
         <java.version>21</java.version>
         <spring-boot.version>3.5.6</spring-boot.version>
-        <spring-cloud.version>2024.0.1</spring-cloud.version>
+        <spring-cloud.version>2025.0.0</spring-cloud.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <flyway.version>10.17.0</flyway.version>
@@ -41,6 +41,7 @@
         <module>services/bff-patient</module>
         <module>services/bff-doctor</module>
         <module>services/bff-admin</module>
+        <module>services/background-jobs</module>
     </modules>
 
     <dependencyManagement>
