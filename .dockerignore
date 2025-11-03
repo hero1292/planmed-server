@@ -1,0 +1,16 @@
+target
+**/target
+**/node_modules
+.git
+.gitignore
+.idea
+.DS_Store
+**/.pytest_cache
+**/__pycache__
+**/.mvn/timing.properties
+**/db/migration/*.tmp
+**/db/migration/*.bak
+**/*.local.yaml
+**/*.local.yml
+**/*.local.properties
+**/*.env*

@@ -1,1 +1,152 @@
-.idea
+### === IntelliJ IDEA === ###
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+# JetBrains Fleet
+.fleet/
+# Workspace settings
+.idea_modules/
+.idea_modules.xml
+.idea_modules.iml
+.idea/httpRequests/
+.idea/shelf/
+.idea/deployment.xml
+.idea/dataSources*
+.idea/sonarlint/
+.idea/dictionaries/
+.idea/workspace.xml
+
+### === Maven / Java === ###
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+.mvn/timing.properties
+mvnw
+mvnw.cmd
+dependency-reduced-pom.xml
+buildNumber.properties
+release.properties
+
+# Eclipse artifacts (если кто-то откроет)
+.classpath
+.project
+.settings/
+
+# Compiled class files
+*.class
+*.log
+*.tmp
+*.swp
+*.swo
+*.bak
+*.orig
+hs_err_pid*
+replay_pid*
+*.hprof
+*.DS_Store
+
+### === Spring Boot === ###
+# Logs and runtime
+logs/
+*.pid
+*.seed
+*.pid.lock
+# Spring Boot build layers (when using `spring-boot:build-image`)
+build/
+BOOT-INF/
+META-INF/
+application.properties~
+application.yaml~
+application.yml~
+
+### === Testcontainers / Docker / Compose === ###
+# Testcontainers tmp
+.testcontainers/
+.tc/
+# Local Docker build artifacts
+docker-compose.override.yml
+*.env
+.env.*
+.envrc
+# Docker build cache
+**/docker/build/
+**/target/docker/
+**/target/jib-cache/
+**/target/jib-cache-layer-*
+# Local volumes
+**/deploy/docker/data/
+**/deploy/docker/logs/
+
+### === Flyway / Database Dumps === ###
+flyway.conf
+**/db/migration/*.tmp
+**/db/migration/*.bak
+**/db/migration/*.sql~ 
+*.sql.dmp
+*.dump
+
+### === Kubernetes / Helm === ###
+deploy/k8s/overlays/*/values.local.yaml
+deploy/k8s/overlays/*/secrets.yaml
+helmfile.lock
+charts/
+*.tgz
+
+### === Build / Reports / Coverage === ###
+# Gradle wrapper (if accidentally added)
+.gradle/
+# Surefire reports
+**/surefire-reports/
+**/failsafe-reports/
+# JaCoCo
+**/jacoco.exec
+**/jacoco.csv
+**/jacoco-report/
+# Coverage tools
+coverage/
+.coverage/
+coverage-final.json
+lcov.info
+
+### === Node / Front-end artifacts (for possible BFF UIs) === ###
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+pnpm-lock.yaml
+dist/
+.build/
+vite.config.ts.timestamp*
+.DS_Store
+
+### === OS-specific === ###
+# macOS
+.AppleDouble
+.LSOverride
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+### === Misc / Tools === ###
+# IDE profiles
+.vscode/
+*.code-workspace
+# Editor backups
+*~
+# Local run configs / secrets
+*.local.yaml
+*.local.yml
+*.local.properties
+*.env.local
+.secret/
+.secret.yaml
+.secret.yml
+.secret.json
+# tmp folders
+tmp/
+temp/

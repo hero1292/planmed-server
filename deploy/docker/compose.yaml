@@ -1,0 +1,257 @@
+version: "3.9"
+name: planmed
+
+services:
+  postgres:
+    image: postgres:17.4-alpine
+    container_name: planmed-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "superuser_reserved_connections=3"
+      - "-c"
+      - "shared_buffers=256MB"
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/:/docker-entrypoint-initdb.d/:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: apache/kafka:latest
+    container_name: planmed-kafka
+    user: "0:0"
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:29093"
+      KAFKA_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:29093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_CLUSTER_ID: "5L6g3nShT-eMCtK--X86sw"
+    volumes:
+      - kafkadata:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+
+  gateway:
+    build:
+      context: ../..
+      dockerfile: platform/gateway/Dockerfile
+    container_name: planmed-gateway
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8080:8080"
+
+  auth-service:
+    build:
+      context: ../..
+      dockerfile: services/auth-service/Dockerfile
+    container_name: planmed-auth-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8101:8080"
+
+  profile-service:
+    build:
+      context: ../..
+      dockerfile: services/profile-service/Dockerfile
+    container_name: planmed-profile-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8102:8080"
+
+  clinical-service:
+    build:
+      context: ../..
+      dockerfile: services/clinical-service/Dockerfile
+    container_name: planmed-clinical-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8103:8080"
+
+  planning-service:
+    build:
+      context: ../..
+      dockerfile: services/planning-service/Dockerfile
+    container_name: planmed-planning-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8104:8080"
+
+  schedule-query-service:
+    build:
+      context: ../..
+      dockerfile: services/schedule-query-service/Dockerfile
+    container_name: planmed-schedule-query-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8105:8080"
+
+  adherence-service:
+    build:
+      context: ../..
+      dockerfile: services/adherence-service/Dockerfile
+    container_name: planmed-adherence-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8106:8080"
+
+  notification-service:
+    build:
+      context: ../..
+      dockerfile: services/notification-service/Dockerfile
+    container_name: planmed-notification-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8107:8080"
+
+  export-service:
+    build:
+      context: ../..
+      dockerfile: services/export-service/Dockerfile
+    container_name: planmed-export-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8108:8080"
+
+  reporting-service:
+    build:
+      context: ../..
+      dockerfile: services/reporting-service/Dockerfile
+    container_name: planmed-reporting-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8109:8080"
+
+  admin-service:
+    build:
+      context: ../..
+      dockerfile: services/admin-service/Dockerfile
+    container_name: planmed-admin-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8110:8080"
+
+  bff-patient:
+    build:
+      context: ../..
+      dockerfile: services/bff-patient/Dockerfile
+    container_name: planmed-bff-patient
+    depends_on:
+      gateway:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8111:8080"
+
+  bff-doctor:
+    build:
+      context: ../..
+      dockerfile: services/bff-doctor/Dockerfile
+    container_name: planmed-bff-doctor
+    depends_on:
+      gateway:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8112:8080"
+
+  bff-admin:
+    build:
+      context: ../..
+      dockerfile: services/bff-admin/Dockerfile
+    container_name: planmed-bff-admin
+    depends_on:
+      gateway:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8113:8080"
+
+volumes:
+  pgdata:
+  kafkadata:

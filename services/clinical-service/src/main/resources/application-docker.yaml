@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: clinical-service
+  datasource:
+    url: jdbc:postgresql://postgres:5432/clinical_service
+    username: clinical
+    password: clinical
+    hikari:
+      maximum-pool-size: 3
+      minimum-idle: 0
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  flyway:
+    enabled: true
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+      auto-offset-reset: earliest
+    properties:
+      spring.json.trusted.packages: "*"
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+server:
+  port: 8080
